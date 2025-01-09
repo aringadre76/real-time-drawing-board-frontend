@@ -10,8 +10,6 @@
 	let isDrawing = false; // Tracks if the user is currently drawing
 	const clientId = Math.random().toString(36).substr(2, 9); // Unique client identifier
 	const distanceThreshold = 10; // Distance threshold for sending updates (pixels)
-	let drawQueue = []; // Queue for drawing operations
-	let isAnimating = false; // Flag to track animation frame status
 	let reconnectAttempts = 0;
 	const maxReconnectAttempts = 5;
 	
@@ -24,7 +22,6 @@
 			const data = JSON.parse(event.data);
 	
 			if (data.clientId === clientId) {
-				console.log("Should be ignoring this message from same client");
 				return;
 			}
 	
@@ -37,7 +34,6 @@
 	
 		ws.onerror = (error) => {
 			console.error("WebSocket error:", error);
-			// Add user feedback about connection issues
 		};
 	
 		ws.onclose = () => {
@@ -51,11 +47,10 @@
 			setTimeout(() => {
 				initializeWebSocket();
 				reconnectAttempts++;
-			}, 1000 * Math.pow(2, reconnectAttempts)); // Exponential backoff
+			}, 1000 * Math.pow(2, reconnectAttempts));
 		}
 	}
 	
-	// Initialize everything on mount
 	onMount(() => {
 		// Canvas setup
 		canvas = document.querySelector("canvas");
@@ -77,44 +72,17 @@
 		};
 	});
 	
-	// Process drawing queue using requestAnimationFrame
-	const processDrawQueue = () => {
-		while (drawQueue.length > 0) {
-			const point = drawQueue.shift();
-			if (point.isLocal) {
-				drawLocalLine(point.prevX, point.prevY, point.x, point.y);
-			} else {
-				drawRemoteLine(point.prevX, point.prevY, point.x, point.y);
-			}
-		}
-	
-		if (drawQueue.length > 0) {
-			requestAnimationFrame(processDrawQueue);
-		} else {
-			isAnimating = false;
-		}
-	};
-	
 	// Handle remote drawing
 	const handleRemoteDrawing = (prevX, prevY, x, y) => {
 		const startX = remoteX ?? prevX;
 		const startY = remoteY ?? prevY;
 	
-		drawQueue.push({
-			prevX: startX,
-			prevY: startY,
-			x,
-			y,
-			isLocal: false
-		});
+		// Draw the received line immediately
+		drawRemoteLine(startX, startY, x, y);
 	
+		// Update remote coordinates
 		remoteX = x;
 		remoteY = y;
-	
-		if (!isAnimating) {
-			isAnimating = true;
-			requestAnimationFrame(processDrawQueue);
-		}
 	};
 	
 	// Start drawing locally
@@ -135,14 +103,8 @@
 		localX = event.clientX - rect.left;
 		localY = event.clientY - rect.top;
 	
-		// Add to draw queue
-		drawQueue.push({
-			prevX,
-			prevY,
-			x: localX,
-			y: localY,
-			isLocal: true
-		});
+		// Draw locally immediately
+		drawLocalLine(prevX, prevY, localX, localY);
 	
 		// Calculate the distance moved
 		const distance = Math.hypot(localX - prevX, localY - prevY);
@@ -159,12 +121,6 @@
 			};
 			ws.send(JSON.stringify(payload));
 		}
-	
-		// Start animation frame if not already running
-		if (!isAnimating) {
-			isAnimating = true;
-			requestAnimationFrame(processDrawQueue);
-		}
 	};
 	
 	// Stop drawing locally
@@ -177,7 +133,7 @@
 		ctx.beginPath();
 		ctx.moveTo(prevX, prevY);
 		ctx.lineTo(x, y);
-		ctx.strokeStyle = "black"; // Local lines are always black
+		ctx.strokeStyle = "black";
 		ctx.lineWidth = 2;
 		ctx.stroke();
 		ctx.closePath();
@@ -188,7 +144,7 @@
 		ctx.beginPath();
 		ctx.moveTo(prevX, prevY);
 		ctx.lineTo(x, y);
-		ctx.strokeStyle = "blue"; // Remote lines are blue
+		ctx.strokeStyle = "blue";
 		ctx.lineWidth = 2;
 		ctx.stroke();
 		ctx.closePath();
@@ -199,7 +155,7 @@
 		ctx.clearRect(x - 5, y - 5, 10, 10);
 	};
 	
-	// Initialize the canvas
+	// Initialize the canvas with proper DPI handling
 	const resizeCanvas = () => {
 		const container = canvas.parentElement;
 		const dpr = window.devicePixelRatio || 1;
@@ -207,10 +163,12 @@
 		canvas.height = (window.innerHeight * 0.8) * dpr;
 		canvas.style.width = `${container.clientWidth}px`;
 		canvas.style.height = `${window.innerHeight * 0.8}px`;
-		ctx.scale(dpr, dpr); // Scale the context to ensure crisp rendering
+		ctx.scale(dpr, dpr);
+		ctx.lineJoin = "round";
+		ctx.lineCap = "round";
 	};
 	
-	// Touch event handlers with improved coordinate calculation
+	// Touch event handlers
 	const handleTouchStart = (event) => {
 		event.preventDefault();
 		const touch = event.touches[0];
@@ -237,14 +195,8 @@
 		localX = (touch.pageX - rect.left - scrollLeft);
 		localY = (touch.pageY - rect.top - scrollTop);
 	
-		// Add to draw queue
-		drawQueue.push({
-			prevX,
-			prevY,
-			x: localX,
-			y: localY,
-			isLocal: true
-		});
+		// Draw immediately
+		drawLocalLine(prevX, prevY, localX, localY);
 	
 		// Calculate distance and send data
 		const distance = Math.hypot(localX - prevX, localY - prevY);
@@ -259,12 +211,6 @@
 				clientId,
 			};
 			ws.send(JSON.stringify(payload));
-		}
-	
-		// Start animation frame if not already running
-		if (!isAnimating) {
-			isAnimating = true;
-			requestAnimationFrame(processDrawQueue);
 		}
 	};
 	</script>
@@ -299,5 +245,3 @@
 			margin: 5px;
 		}
 	</style>
-
-	
