@@ -12,7 +12,19 @@
 	const distanceThreshold = 10; // Distance threshold for sending updates (pixels)
 
 	// Initialize WebSocket connection
+	// Keep only one onMount function that combines both WebSocket and canvas initialization
 	onMount(() => {
+		// Canvas setup
+		canvas = document.querySelector("canvas");
+		ctx = canvas.getContext("2d");
+		ctx.lineJoin = "round";
+		ctx.lineCap = "round";
+
+		// Canvas resize handling
+		resizeCanvas();
+		window.addEventListener("resize", resizeCanvas);
+
+		// WebSocket setup
 		ws = new WebSocket(
 			"wss://web-production-efe2f.up.railway.app/ws/drawing/",
 		);
@@ -39,6 +51,12 @@
 
 		ws.onerror = (error) => console.error("WebSocket error:", error);
 		ws.onclose = () => console.log("WebSocket disconnected.");
+
+		// Cleanup function
+		return () => {
+			window.removeEventListener("resize", resizeCanvas);
+			if (ws) ws.close();
+		};
 	});
 
 	// Handle remote drawing
@@ -141,21 +159,6 @@
 		canvas.height = window.innerHeight * 0.8; // 80% of viewport height
 	};
 
-	onMount(() => {
-		canvas = document.querySelector("canvas");
-		ctx = canvas.getContext("2d");
-		ctx.lineJoin = "round";
-		ctx.lineCap = "round";
-
-		// Add resize handling
-		resizeCanvas();
-		window.addEventListener("resize", resizeCanvas);
-
-		// Clean up
-		return () => {
-			window.removeEventListener("resize", resizeCanvas);
-		};
-	});
 	// Add these new touch handler functions:
 	const handleTouchStart = (event) => {
 		const touch = event.touches[0];
@@ -176,10 +179,11 @@
 		localX = touch.clientX - rect.left;
 		localY = touch.clientY - rect.top;
 
-		// Calculate distance and send data, similar to mouse draw function
-		const distance = Math.hypot(localX - prevX, localY - prevY);
-
+		// Draw locally first
 		drawLocalLine(prevX, prevY, localX, localY);
+
+		// Calculate distance and send data
+		const distance = Math.hypot(localX - prevX, localY - prevY);
 
 		if (distance > distanceThreshold) {
 			const payload = {
@@ -191,10 +195,11 @@
 				clientId,
 			};
 			ws.send(JSON.stringify(payload));
+			console.log("Sent WebSocket message:", payload); // Add logging
 		}
 	};
 </script>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <h1>Real-Time Drawing Board</h1>
 
 <div>
@@ -223,4 +228,5 @@
 	button {
 		margin: 5px;
 	}
+	
 </style>
