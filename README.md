@@ -1,107 +1,94 @@
-# This repo is no longer maintained. Consider using `npm init vite` and selecting the `svelte` option or — if you want a full-fledged app framework — use [SvelteKit](https://kit.svelte.dev), the official application framework for Svelte.
+# Real-Time Drawing Board - Frontend
+
+This is the **frontend code** for the **Real-Time Drawing Board**, a collaborative drawing platform built with **Svelte**. It enables users to draw in real-time on a shared canvas using WebSocket integration. The application supports both desktop and mobile devices, providing a seamless and interactive experience.
 
 ---
 
-# svelte app
+## Features
 
-This is a project template for [Svelte](https://svelte.dev) apps. It lives at https://github.com/sveltejs/template.
+- 🖌️ **Real-Time Collaboration**: Draw and share updates instantly with others.
+- 📱 **Responsive Design**: Fully functional on mobile and desktop devices.
+- 🎨 **Smooth Drawing Experience**: Smart interpolation for cleaner lines and adaptive point handling.
+- 🔗 **WebSocket Integration**: Powered by WebSockets for low-latency communication.
+- 💻 **Modern UI**: Clean and minimalist interface for easy interaction.
 
-To create a new project based on this template using [degit](https://github.com/Rich-Harris/degit):
+---
 
-```bash
-npx degit sveltejs/template svelte-app
-cd svelte-app
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (version 14 or later recommended)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+
+### Installation
+
+Clone the repository:
+
+```
+git clone https://github.com/aringadre76/real-time-drawing-board-frontend.git
+cd real-time-drawing-board-frontend
 ```
 
-*Note that you will need to have [Node.js](https://nodejs.org) installed.*
+Install the dependencies:
 
-
-## Get started
-
-Install the dependencies...
-
-```bash
-cd svelte-app
+```
 npm install
 ```
 
-...then start [Rollup](https://rollupjs.org):
+Start the development server:
 
-```bash
+```
 npm run dev
 ```
 
-Navigate to [localhost:8080](http://localhost:8080). You should see your app running. Edit a component file in `src`, save it, and reload the page to see your changes.
+Navigate to [http://localhost:8080](http://localhost:8080) in your browser to see the app in action.
 
-By default, the server will only respond to requests from localhost. To allow connections from other computers, edit the `sirv` commands in package.json to include the option `--host 0.0.0.0`.
+---
 
-If you're using [Visual Studio Code](https://code.visualstudio.com/) we recommend installing the official extension [Svelte for VS Code](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode). If you are using other editors you may need to install a plugin in order to get syntax highlighting and intellisense.
+## Building for Production
 
-## Building and running in production mode
+To create an optimized version of the app:
 
-To create an optimised version of the app:
-
-```bash
+```
 npm run build
 ```
 
-You can run the newly built app with `npm run start`. This uses [sirv](https://github.com/lukeed/sirv), which is included in your package.json's `dependencies` so that the app will work when you deploy to platforms like [Heroku](https://heroku.com).
+This will generate the production-ready files in the `public/build` directory.
 
+---
 
-## Single-page app mode
+## Deployment
 
-By default, sirv will only respond to requests that match files in `public`. This is to maximise compatibility with static fileservers, allowing you to deploy your app anywhere.
+### Deploying with [Vercel](https://vercel.com)
 
-If you're building a single-page app (SPA) with multiple routes, sirv needs to be able to respond to requests for *any* path. You can make it so by editing the `"start"` command in package.json:
+1. Install the Vercel CLI:
 
-```js
-"start": "sirv public --single"
-```
+    ```
+    npm install -g vercel
+    ```
 
-## Using TypeScript
+2. Deploy the app:
 
-This template comes with a script to set up a TypeScript development environment, you can run it immediately after cloning the template with:
+    ```
+    vercel
+    ```
 
-```bash
-node scripts/setupTypeScript.js
-```
+3. Follow the instructions in the terminal to complete the deployment.
 
-Or remove the script via:
+---
 
-```bash
-rm scripts/setupTypeScript.js
-```
+## Repository Links
 
-If you want to use `baseUrl` or `path` aliases within your `tsconfig`, you need to set up `@rollup/plugin-alias` to tell Rollup to resolve the aliases. For more info, see [this StackOverflow question](https://stackoverflow.com/questions/63427935/setup-tsconfig-path-in-svelte).
+- **Backend Code**: [https://github.com/aringadre76/real-time-drawing-board-backend-deploy](https://github.com/aringadre76/real-time-drawing-board-backend-deploy)
+- **Frontend Code**: [https://github.com/aringadre76/real-time-drawing-board-frontend](https://github.com/aringadre76/real-time-drawing-board-frontend)
 
-## Deploying to the web
+---
 
-### With [Vercel](https://vercel.com)
+## About the Creator
 
-Install `vercel` if you haven't already:
+Developed by **Arin Gadre**.
 
-```bash
-npm install -g vercel
-```
-
-Then, from within your project folder:
-
-```bash
-cd public
-vercel deploy --name my-project
-```
-
-### With [surge](https://surge.sh/)
-
-Install `surge` if you haven't already:
-
-```bash
-npm install -g surge
-```
-
-Then, from within your project folder:
-
-```bash
-npm run build
-surge public my-project.surge.sh
-```
+- 🌐 **LinkedIn**: [https://www.linkedin.com/in/arin-gadre/](https://www.linkedin.com/in/arin-gadre/)
+- 💻 **GitHub**: [https://github.com/aringadre76](https://github.com/aringadre76)
+- 📧 **Email**: [aringadre@gmail.com](mailto:aringadre@gmail.com)
