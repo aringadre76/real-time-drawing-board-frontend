@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from "svelte";
-
+	
 	let ws; // WebSocket connection
 	let localX = 0,
 		localY = 0; // Local coordinates for drawing
@@ -10,97 +10,144 @@
 	let isDrawing = false; // Tracks if the user is currently drawing
 	const clientId = Math.random().toString(36).substr(2, 9); // Unique client identifier
 	const distanceThreshold = 10; // Distance threshold for sending updates (pixels)
-
+	let drawQueue = []; // Queue for drawing operations
+	let isAnimating = false; // Flag to track animation frame status
+	let reconnectAttempts = 0;
+	const maxReconnectAttempts = 5;
+	
 	// Initialize WebSocket connection
-	// Keep only one onMount function that combines both WebSocket and canvas initialization
-	onMount(() => {
-		// Canvas setup
-		canvas = document.querySelector("canvas");
-		ctx = canvas.getContext("2d");
-		ctx.lineJoin = "round";
-		ctx.lineCap = "round";
-
-		// Canvas resize handling
-		resizeCanvas();
-		window.addEventListener("resize", resizeCanvas);
-
-		// WebSocket setup
-		ws = new WebSocket(
-			"wss://web-production-efe2f.up.railway.app/ws/drawing/",
-		);
-
+	function initializeWebSocket() {
+		ws = new WebSocket("wss://web-production-efe2f.up.railway.app/ws/drawing/");
+	
 		ws.onopen = () => console.log("WebSocket connected!");
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
-
-			console.log("Message received - Data clientId:", data.clientId);
-			console.log("Local clientId:", clientId);
-			console.log("Are they equal?:", data.clientId === clientId);
-
+	
 			if (data.clientId === clientId) {
 				console.log("Should be ignoring this message from same client");
 				return;
 			}
-
+	
 			if (data.action === "draw") {
 				handleRemoteDrawing(data.prevX, data.prevY, data.x, data.y);
 			} else if (data.action === "erase") {
 				eraseLine(data.x, data.y);
 			}
 		};
-
-		ws.onerror = (error) => console.error("WebSocket error:", error);
-		ws.onclose = () => console.log("WebSocket disconnected.");
-
+	
+		ws.onerror = (error) => {
+			console.error("WebSocket error:", error);
+			// Add user feedback about connection issues
+		};
+	
+		ws.onclose = () => {
+			console.log("WebSocket disconnected.");
+			reconnectWebSocket();
+		};
+	}
+	
+	function reconnectWebSocket() {
+		if (reconnectAttempts < maxReconnectAttempts) {
+			setTimeout(() => {
+				initializeWebSocket();
+				reconnectAttempts++;
+			}, 1000 * Math.pow(2, reconnectAttempts)); // Exponential backoff
+		}
+	}
+	
+	// Initialize everything on mount
+	onMount(() => {
+		// Canvas setup
+		canvas = document.querySelector("canvas");
+		ctx = canvas.getContext("2d");
+		ctx.lineJoin = "round";
+		ctx.lineCap = "round";
+	
+		// Canvas resize handling
+		resizeCanvas();
+		window.addEventListener("resize", resizeCanvas);
+	
+		// Initialize WebSocket
+		initializeWebSocket();
+	
 		// Cleanup function
 		return () => {
 			window.removeEventListener("resize", resizeCanvas);
 			if (ws) ws.close();
 		};
 	});
-
+	
+	// Process drawing queue using requestAnimationFrame
+	const processDrawQueue = () => {
+		while (drawQueue.length > 0) {
+			const point = drawQueue.shift();
+			if (point.isLocal) {
+				drawLocalLine(point.prevX, point.prevY, point.x, point.y);
+			} else {
+				drawRemoteLine(point.prevX, point.prevY, point.x, point.y);
+			}
+		}
+	
+		if (drawQueue.length > 0) {
+			requestAnimationFrame(processDrawQueue);
+		} else {
+			isAnimating = false;
+		}
+	};
+	
 	// Handle remote drawing
 	const handleRemoteDrawing = (prevX, prevY, x, y) => {
-		console.log(`Remote drawing: (${prevX}, ${prevY}) to (${x}, ${y})`);
-
-		// Use previous remote points or initialize
 		const startX = remoteX ?? prevX;
 		const startY = remoteY ?? prevY;
-
-		// Draw the received line
-		drawRemoteLine(startX, startY, x, y);
-
-		// Update remote coordinates
+	
+		drawQueue.push({
+			prevX: startX,
+			prevY: startY,
+			x,
+			y,
+			isLocal: false
+		});
+	
 		remoteX = x;
 		remoteY = y;
+	
+		if (!isAnimating) {
+			isAnimating = true;
+			requestAnimationFrame(processDrawQueue);
+		}
 	};
-
+	
 	// Start drawing locally
 	const startDrawing = (event) => {
 		isDrawing = true;
 		const rect = canvas.getBoundingClientRect();
 		localX = event.clientX - rect.left;
 		localY = event.clientY - rect.top;
-		console.log("Local drawing started:", localX, localY);
 	};
-
+	
 	// Draw while moving locally
 	const draw = (event) => {
 		if (!isDrawing) return;
-
+	
 		const rect = canvas.getBoundingClientRect();
 		const prevX = localX;
 		const prevY = localY;
 		localX = event.clientX - rect.left;
 		localY = event.clientY - rect.top;
-
-		// Draw locally first
-		drawLocalLine(prevX, prevY, localX, localY); // <-- Draw locally first
-
+	
+		// Add to draw queue
+		drawQueue.push({
+			prevX,
+			prevY,
+			x: localX,
+			y: localY,
+			isLocal: true
+		});
+	
 		// Calculate the distance moved
 		const distance = Math.hypot(localX - prevX, localY - prevY);
-
-		// Then send data only when distance exceeds the threshold
+	
+		// Send data only when distance exceeds the threshold
 		if (distance >= distanceThreshold) {
 			const payload = {
 				prevX,
@@ -111,19 +158,22 @@
 				clientId,
 			};
 			ws.send(JSON.stringify(payload));
-			console.log("Sent WebSocket message:", payload);
+		}
+	
+		// Start animation frame if not already running
+		if (!isAnimating) {
+			isAnimating = true;
+			requestAnimationFrame(processDrawQueue);
 		}
 	};
-
+	
 	// Stop drawing locally
 	const stopDrawing = () => {
 		isDrawing = false;
-		console.log("Local drawing stopped.");
 	};
-
+	
 	// Draw a local line on the canvas
 	const drawLocalLine = (prevX, prevY, x, y) => {
-		console.log(`Local drawing: (${prevX}, ${prevY}) to (${x}, ${y})`);
 		ctx.beginPath();
 		ctx.moveTo(prevX, prevY);
 		ctx.lineTo(x, y);
@@ -132,10 +182,9 @@
 		ctx.stroke();
 		ctx.closePath();
 	};
-
+	
 	// Draw a remote line on the canvas
 	const drawRemoteLine = (prevX, prevY, x, y) => {
-		console.log(`Remote drawing: (${prevX}, ${prevY}) to (${x}, ${y})`);
 		ctx.beginPath();
 		ctx.moveTo(prevX, prevY);
 		ctx.lineTo(x, y);
@@ -144,59 +193,62 @@
 		ctx.stroke();
 		ctx.closePath();
 	};
-
+	
 	// Erase by drawing a "clear" rectangle
 	const eraseLine = (x, y) => {
-		ctx.clearRect(x - 5, y - 5, 10, 10); // Adjust erase size
-		console.log(`Erase at: (${x}, ${y})`);
+		ctx.clearRect(x - 5, y - 5, 10, 10);
 	};
-
+	
 	// Initialize the canvas
-	// Add this to your onMount function
 	const resizeCanvas = () => {
 		const container = canvas.parentElement;
-		canvas.width = container.clientWidth;
-		canvas.height = window.innerHeight * 0.8; // 80% of viewport height
+		const dpr = window.devicePixelRatio || 1;
+		canvas.width = container.clientWidth * dpr;
+		canvas.height = (window.innerHeight * 0.8) * dpr;
+		canvas.style.width = `${container.clientWidth}px`;
+		canvas.style.height = `${window.innerHeight * 0.8}px`;
+		ctx.scale(dpr, dpr); // Scale the context to ensure crisp rendering
 	};
-
-	// Add these new touch handler functions:
+	
+	// Touch event handlers with improved coordinate calculation
 	const handleTouchStart = (event) => {
-		event.preventDefault(); // Prevent scrolling
+		event.preventDefault();
 		const touch = event.touches[0];
 		const rect = canvas.getBoundingClientRect();
-		const scrollLeft =
-			window.pageXOffset || document.documentElement.scrollLeft;
-		const scrollTop =
-			window.pageYOffset || document.documentElement.scrollTop;
-
-		localX = touch.pageX - rect.left - scrollLeft;
-		localY = touch.pageY - rect.top - scrollTop;
+		const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+		const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+	
+		localX = (touch.pageX - rect.left - scrollLeft);
+		localY = (touch.pageY - rect.top - scrollTop);
 		isDrawing = true;
-		console.log("Touch drawing started:", localX, localY);
 	};
-
+	
 	const handleTouchMove = (event) => {
-		event.preventDefault(); // Prevent scrolling
+		event.preventDefault();
 		if (!isDrawing) return;
-
+	
 		const touch = event.touches[0];
 		const rect = canvas.getBoundingClientRect();
-		const scrollLeft =
-			window.pageXOffset || document.documentElement.scrollLeft;
-		const scrollTop =
-			window.pageYOffset || document.documentElement.scrollTop;
-
+		const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+		const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+	
 		const prevX = localX;
 		const prevY = localY;
-		localX = touch.pageX - rect.left - scrollLeft;
-		localY = touch.pageY - rect.top - scrollTop;
-
-		// Draw locally first
-		drawLocalLine(prevX, prevY, localX, localY);
-
+		localX = (touch.pageX - rect.left - scrollLeft);
+		localY = (touch.pageY - rect.top - scrollTop);
+	
+		// Add to draw queue
+		drawQueue.push({
+			prevX,
+			prevY,
+			x: localX,
+			y: localY,
+			isLocal: true
+		});
+	
 		// Calculate distance and send data
 		const distance = Math.hypot(localX - prevX, localY - prevY);
-
+	
 		if (distance > distanceThreshold) {
 			const payload = {
 				prevX,
@@ -207,41 +259,45 @@
 				clientId,
 			};
 			ws.send(JSON.stringify(payload));
-			console.log("Sent WebSocket message:", payload);
+		}
+	
+		// Start animation frame if not already running
+		if (!isAnimating) {
+			isAnimating = true;
+			requestAnimationFrame(processDrawQueue);
 		}
 	};
-</script>
+	</script>
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<h1>Real-Time Drawing Board</h1>
+	
+	<div>
+		<button on:click={() => (action = "draw")}>Draw</button>
+		<button on:click={() => (action = "erase")}>Erase</button>
+	</div>
+	
+	<canvas
+		width="800"
+		height="600"
+		on:mousedown={startDrawing}
+		on:mousemove={draw}
+		on:mouseup={stopDrawing}
+		on:mouseleave={stopDrawing}
+		on:touchstart|preventDefault={handleTouchStart}
+		on:touchmove|preventDefault={handleTouchMove}
+		on:touchend|preventDefault={stopDrawing}
+	/>
+	
+	<style>
+		canvas {
+			border: 1px solid #ccc;
+			display: block;
+			margin: 20px auto;
+		}
+		button {
+			margin: 5px;
+		}
+	</style>
 
-<meta
-	name="viewport"
-	content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-/>
-<h1>Real-Time Drawing Board</h1>
-
-<div>
-	<button on:click={() => (action = "draw")}>Draw</button>
-	<button on:click={() => (action = "erase")}>Erase</button>
-</div>
-
-<canvas
-	width="800"
-	height="600"
-	on:mousedown={startDrawing}
-	on:mousemove={draw}
-	on:mouseup={stopDrawing}
-	on:mouseleave={stopDrawing}
-	on:touchstart|preventDefault={handleTouchStart}
-	on:touchmove|preventDefault={handleTouchMove}
-	on:touchend|preventDefault={stopDrawing}
-/>
-
-<style>
-	canvas {
-		border: 1px solid #ccc;
-		display: block;
-		margin: 20px auto;
-	}
-	button {
-		margin: 5px;
-	}
-</style>
+	
