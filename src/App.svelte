@@ -7,21 +7,34 @@
     let action = "draw"; // Action type (e.g., "draw" or "erase")
     let canvas, ctx; // Canvas and its context for rendering
     let isDrawing = false; // Tracks if the user is currently drawing
+	let lastX, lastY; // Track the last point for WebSocket updates
+	let lastSendTime = 0; // Track the last time a message was sent
+
 
     // Initialize WebSocket connection
     onMount(() => {
         ws = new WebSocket("wss://web-production-efe2f.up.railway.app/ws/drawing/");
 
         ws.onopen = () => console.log("WebSocket connected!");
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            drawings = [...drawings, data];
-            if (data.action === "draw") {
-                drawSmoothLine(data.prevX, data.prevY, data.x, data.y);
-            } else if (data.action === "erase") {
-                eraseLine(data.x, data.y);
-            }
-        };
+		
+		ws.onmessage = (event) => {
+			const data = JSON.parse(event.data);
+
+			if (data.action === "draw") {
+				// Use the previous point or initialize if not set
+				const prevX = lastX !== undefined ? lastX : data.x;
+				const prevY = lastY !== undefined ? lastY : data.y;
+
+				// Draw the line
+				drawSmoothLine(prevX, prevY, data.x, data.y);
+
+				// Update the last point
+				lastX = data.x;
+				lastY = data.y;
+			} else if (data.action === "erase") {
+				eraseLine(data.x, data.y);
+			}
+		};
         ws.onerror = (error) => console.error("WebSocket error:", error);
         ws.onclose = () => console.log("WebSocket disconnected.");
     });
@@ -35,23 +48,31 @@
     };
 
     // Draw while moving
-    const draw = (event) => {
-        if (!isDrawing) return;
+	const draw = (event) => {
+		if (!isDrawing) return;
 
-        const rect = canvas.getBoundingClientRect();
-        const prevX = x;
-        const prevY = y;
-        x = event.clientX - rect.left;
-        y = event.clientY - rect.top;
+		const rect = canvas.getBoundingClientRect();
+		const prevX = x;
+		const prevY = y;
+		x = event.clientX - rect.left;
+		y = event.clientY - rect.top;
 
-        const payload = { prevX, prevY, x, y, action };
-        ws.send(JSON.stringify(payload));
-        if (action === "draw") {
-            drawSmoothLine(prevX, prevY, x, y); // Draw locally
-        } else if (action === "erase") {
-            eraseLine(x, y); // Erase locally
-        }
-    };
+		// Throttle the updates (send only every 50ms)
+		const now = Date.now();
+		const distance = Math.hypot(x - prevX, y - prevY); // Check movement distance
+
+		if (now - lastSendTime > 50 && distance > 5) {
+			const payload = { prevX, prevY, x, y, action };
+			ws.send(JSON.stringify(payload)); // Send only if significant change
+			lastSendTime = now;
+		}
+
+		if (action === "draw") {
+			drawSmoothLine(prevX, prevY, x, y); // Draw locally
+		} else if (action === "erase") {
+			eraseLine(x, y); // Erase locally
+		}
+	};
 
     // Stop drawing
     const stopDrawing = () => {
@@ -60,27 +81,16 @@
 
     // Draw a smooth line on the canvas
 	const drawSmoothLine = (prevX, prevY, x, y) => {
-		const distance = Math.hypot(x - prevX, y - prevY); // Calculate the distance
-		const steps = Math.ceil(distance / 2); // Add intermediate points based on distance
-		const dx = (x - prevX) / steps; // Step size for x
-		const dy = (y - prevY) / steps; // Step size for y
-
-		for (let i = 0; i <= steps; i++) {
-			const currentX = prevX + dx * i;
-			const currentY = prevY + dy * i;
-
-			ctx.beginPath();
-			if (i === 0) {
-				ctx.moveTo(currentX, currentY); // Start at the first point
-			} else {
-				ctx.lineTo(currentX, currentY); // Draw line to the next intermediate point
-			}
-			ctx.strokeStyle = "black";
-			ctx.lineWidth = 2;
-			ctx.stroke();
-			ctx.closePath();
-		}
+		console.log(`Drawing line: (${prevX}, ${prevY}) to (${x}, ${y})`);
+		ctx.beginPath();
+		ctx.moveTo(prevX, prevY);
+		ctx.lineTo(x, y);
+		ctx.strokeStyle = "black";
+		ctx.lineWidth = 2;
+		ctx.stroke();
+		ctx.closePath();
 	};
+
 
 
     // Erase by drawing a "clear" rectangle
