@@ -59,15 +59,29 @@
     };
 
     // Draw a smooth line on the canvas
-    const drawSmoothLine = (prevX, prevY, x, y) => {
-        ctx.beginPath();
-        ctx.moveTo(prevX, prevY);
-        ctx.lineTo(x, y);
-        ctx.strokeStyle = "black"; // Adjust color as needed
-        ctx.lineWidth = 2; // Adjust line width for smoother lines
-        ctx.stroke();
-        ctx.closePath();
-    };
+	const drawSmoothLine = (prevX, prevY, x, y) => {
+		const distance = Math.hypot(x - prevX, y - prevY); // Calculate the distance
+		const steps = Math.ceil(distance / 2); // Add intermediate points based on distance
+		const dx = (x - prevX) / steps; // Step size for x
+		const dy = (y - prevY) / steps; // Step size for y
+
+		for (let i = 0; i <= steps; i++) {
+			const currentX = prevX + dx * i;
+			const currentY = prevY + dy * i;
+
+			ctx.beginPath();
+			if (i === 0) {
+				ctx.moveTo(currentX, currentY); // Start at the first point
+			} else {
+				ctx.lineTo(currentX, currentY); // Draw line to the next intermediate point
+			}
+			ctx.strokeStyle = "black";
+			ctx.lineWidth = 2;
+			ctx.stroke();
+			ctx.closePath();
+		}
+	};
+
 
     // Erase by drawing a "clear" rectangle
     const eraseLine = (x, y) => {
