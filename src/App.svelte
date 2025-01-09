@@ -2,39 +2,36 @@
 	import { onMount } from "svelte";
 
 	let ws; // WebSocket connection
-	let x = 0,
-		y = 0; // Local coordinates for drawing actions
+	let localX = 0,
+		localY = 0; // Local coordinates for drawing
+	let remoteX, remoteY; // Remote coordinates for drawing
 	let action = "draw"; // Action type (e.g., "draw" or "erase")
 	let canvas, ctx; // Canvas and its context for rendering
 	let isDrawing = false; // Tracks if the user is currently drawing
-	let accumulatedDistance = 0; // Accumulates distance drawn for throttling
-	const sendThreshold = 10; // Send updates every 10 pixels
 	const clientId = Math.random().toString(36).substr(2, 9); // Unique client identifier
-	let lastRemoteX, lastRemoteY; // Track last points for remote drawing
+	const distanceThreshold = 10; // Distance threshold for sending updates (pixels)
 
 	// Initialize WebSocket connection
 	onMount(() => {
-		ws = new WebSocket("wss://web-production-efe2f.up.railway.app/ws/drawing/");
+		ws = new WebSocket(
+			"wss://web-production-efe2f.up.railway.app/ws/drawing/",
+		);
 
 		ws.onopen = () => console.log("WebSocket connected!");
-
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
 
-			// Ignore messages from the same client
-			if (data.clientId === clientId) return;
+			console.log("Message received - Data clientId:", data.clientId);
+			console.log("Local clientId:", clientId);
+			console.log("Are they equal?:", data.clientId === clientId);
+
+			if (data.clientId === clientId) {
+				console.log("Should be ignoring this message from same client");
+				return;
+			}
 
 			if (data.action === "draw") {
-				// Handle remote drawing with interpolation
-				if (lastRemoteX !== undefined && lastRemoteY !== undefined) {
-					interpolateAndDraw(lastRemoteX, lastRemoteY, data.x, data.y, "black");
-				} else {
-					drawLine(data.x, data.y, data.x, data.y, "black"); // Start point
-				}
-
-				// Update lastRemoteX and lastRemoteY
-				lastRemoteX = data.x;
-				lastRemoteY = data.y;
+				handleRemoteDrawing(data.prevX, data.prevY, data.x, data.y);
 			} else if (data.action === "erase") {
 				eraseLine(data.x, data.y);
 			}
@@ -44,13 +41,29 @@
 		ws.onclose = () => console.log("WebSocket disconnected.");
 	});
 
+	// Handle remote drawing
+	const handleRemoteDrawing = (prevX, prevY, x, y) => {
+		console.log(`Remote drawing: (${prevX}, ${prevY}) to (${x}, ${y})`);
+
+		// Use previous remote points or initialize
+		const startX = remoteX ?? prevX;
+		const startY = remoteY ?? prevY;
+
+		// Draw the received line
+		drawRemoteLine(startX, startY, x, y);
+
+		// Update remote coordinates
+		remoteX = x;
+		remoteY = y;
+	};
+
 	// Start drawing locally
 	const startDrawing = (event) => {
 		isDrawing = true;
 		const rect = canvas.getBoundingClientRect();
-		x = event.clientX - rect.left;
-		y = event.clientY - rect.top;
-		accumulatedDistance = 0; // Reset accumulated distance
+		localX = event.clientX - rect.left;
+		localY = event.clientY - rect.top;
+		console.log("Local drawing started:", localX, localY);
 	};
 
 	// Draw while moving locally
@@ -58,70 +71,128 @@
 		if (!isDrawing) return;
 
 		const rect = canvas.getBoundingClientRect();
-		const prevX = x;
-		const prevY = y;
-		x = event.clientX - rect.left;
-		y = event.clientY - rect.top;
+		const prevX = localX;
+		const prevY = localY;
+		localX = event.clientX - rect.left;
+		localY = event.clientY - rect.top;
+
+		// Draw locally first
+		drawLocalLine(prevX, prevY, localX, localY); // <-- Draw locally first
 
 		// Calculate the distance moved
-		const distance = Math.hypot(x - prevX, y - prevY);
-		accumulatedDistance += distance;
+		const distance = Math.hypot(localX - prevX, localY - prevY);
 
-		// Send data only when accumulated distance exceeds the threshold
-		if (accumulatedDistance >= sendThreshold) {
-			const payload = { prevX, prevY, x, y, action, clientId };
+		// Then send data only when distance exceeds the threshold
+		if (distance >= distanceThreshold) {
+			const payload = {
+				prevX,
+				prevY,
+				x: localX,
+				y: localY,
+				action,
+				clientId,
+			};
 			ws.send(JSON.stringify(payload));
-			accumulatedDistance = 0; // Reset after sending
+			console.log("Sent WebSocket message:", payload);
 		}
-
-		// Draw the local line
-		drawLine(prevX, prevY, x, y, "black");
 	};
 
 	// Stop drawing locally
 	const stopDrawing = () => {
 		isDrawing = false;
+		console.log("Local drawing stopped.");
 	};
 
-	// Draw a line on the canvas
-	const drawLine = (prevX, prevY, x, y, color) => {
+	// Draw a local line on the canvas
+	const drawLocalLine = (prevX, prevY, x, y) => {
+		console.log(`Local drawing: (${prevX}, ${prevY}) to (${x}, ${y})`);
 		ctx.beginPath();
 		ctx.moveTo(prevX, prevY);
 		ctx.lineTo(x, y);
-		ctx.strokeStyle = color;
+		ctx.strokeStyle = "black"; // Local lines are always black
 		ctx.lineWidth = 2;
 		ctx.stroke();
 		ctx.closePath();
 	};
 
-	// Interpolate and draw between two points
-	const interpolateAndDraw = (prevX, prevY, x, y, color) => {
-		const distance = Math.hypot(x - prevX, y - prevY);
-		const steps = Math.ceil(distance / 5); // Adjust step size for smoother lines
-		const deltaX = (x - prevX) / steps;
-		const deltaY = (y - prevY) / steps;
-
-		for (let i = 0; i <= steps; i++) {
-			const interpolatedX = prevX + deltaX * i;
-			const interpolatedY = prevY + deltaY * i;
-			const nextX = interpolatedX + deltaX;
-			const nextY = interpolatedY + deltaY;
-			drawLine(interpolatedX, interpolatedY, nextX, nextY, color);
-		}
+	// Draw a remote line on the canvas
+	const drawRemoteLine = (prevX, prevY, x, y) => {
+		console.log(`Remote drawing: (${prevX}, ${prevY}) to (${x}, ${y})`);
+		ctx.beginPath();
+		ctx.moveTo(prevX, prevY);
+		ctx.lineTo(x, y);
+		ctx.strokeStyle = "blue"; // Remote lines are blue
+		ctx.lineWidth = 2;
+		ctx.stroke();
+		ctx.closePath();
 	};
 
 	// Erase by drawing a "clear" rectangle
 	const eraseLine = (x, y) => {
 		ctx.clearRect(x - 5, y - 5, 10, 10); // Adjust erase size
+		console.log(`Erase at: (${x}, ${y})`);
 	};
 
 	// Initialize the canvas
+	// Add this to your onMount function
+	const resizeCanvas = () => {
+		const container = canvas.parentElement;
+		canvas.width = container.clientWidth;
+		canvas.height = window.innerHeight * 0.8; // 80% of viewport height
+	};
+
 	onMount(() => {
 		canvas = document.querySelector("canvas");
 		ctx = canvas.getContext("2d");
 		ctx.lineJoin = "round";
 		ctx.lineCap = "round";
+
+		// Add resize handling
+		resizeCanvas();
+		window.addEventListener("resize", resizeCanvas);
+
+		// Clean up
+		return () => {
+			window.removeEventListener("resize", resizeCanvas);
+		};
 	});
+	// Add these new touch handler functions:
+	const handleTouchStart = (event) => {
+		const touch = event.touches[0];
+		const rect = canvas.getBoundingClientRect();
+		localX = touch.clientX - rect.left;
+		localY = touch.clientY - rect.top;
+		isDrawing = true;
+		console.log("Touch drawing started:", localX, localY);
+	};
+
+	const handleTouchMove = (event) => {
+		if (!isDrawing) return;
+
+		const touch = event.touches[0];
+		const rect = canvas.getBoundingClientRect();
+		const prevX = localX;
+		const prevY = localY;
+		localX = touch.clientX - rect.left;
+		localY = touch.clientY - rect.top;
+
+		// Calculate distance and send data, similar to mouse draw function
+		const distance = Math.hypot(localX - prevX, localY - prevY);
+
+		drawLocalLine(prevX, prevY, localX, localY);
+
+		if (distance > distanceThreshold) {
+			const payload = {
+				prevX,
+				prevY,
+				x: localX,
+				y: localY,
+				action,
+				clientId,
+			};
+			ws.send(JSON.stringify(payload));
+		}
+	};
 </script>
 
 <h1>Real-Time Drawing Board</h1>
@@ -138,9 +209,10 @@
 	on:mousemove={draw}
 	on:mouseup={stopDrawing}
 	on:mouseleave={stopDrawing}
-></canvas>
-
-<!-- Stop drawing if mouse leaves canvas -->
+	on:touchstart|preventDefault={handleTouchStart}
+	on:touchmove|preventDefault={handleTouchMove}
+	on:touchend|preventDefault={stopDrawing}
+/>
 
 <style>
 	canvas {
