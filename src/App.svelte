@@ -161,23 +161,35 @@
 
 	// Add these new touch handler functions:
 	const handleTouchStart = (event) => {
+		event.preventDefault(); // Prevent scrolling
 		const touch = event.touches[0];
 		const rect = canvas.getBoundingClientRect();
-		localX = touch.clientX - rect.left;
-		localY = touch.clientY - rect.top;
+		const scrollLeft =
+			window.pageXOffset || document.documentElement.scrollLeft;
+		const scrollTop =
+			window.pageYOffset || document.documentElement.scrollTop;
+
+		localX = touch.pageX - rect.left - scrollLeft;
+		localY = touch.pageY - rect.top - scrollTop;
 		isDrawing = true;
 		console.log("Touch drawing started:", localX, localY);
 	};
 
 	const handleTouchMove = (event) => {
+		event.preventDefault(); // Prevent scrolling
 		if (!isDrawing) return;
 
 		const touch = event.touches[0];
 		const rect = canvas.getBoundingClientRect();
+		const scrollLeft =
+			window.pageXOffset || document.documentElement.scrollLeft;
+		const scrollTop =
+			window.pageYOffset || document.documentElement.scrollTop;
+
 		const prevX = localX;
 		const prevY = localY;
-		localX = touch.clientX - rect.left;
-		localY = touch.clientY - rect.top;
+		localX = touch.pageX - rect.left - scrollLeft;
+		localY = touch.pageY - rect.top - scrollTop;
 
 		// Draw locally first
 		drawLocalLine(prevX, prevY, localX, localY);
@@ -195,11 +207,15 @@
 				clientId,
 			};
 			ws.send(JSON.stringify(payload));
-			console.log("Sent WebSocket message:", payload); // Add logging
+			console.log("Sent WebSocket message:", payload);
 		}
 	};
 </script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+<meta
+	name="viewport"
+	content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+/>
 <h1>Real-Time Drawing Board</h1>
 
 <div>
@@ -228,5 +244,4 @@
 	button {
 		margin: 5px;
 	}
-	
 </style>
