@@ -301,82 +301,139 @@
 		/>
 	</div>
 
-	<footer>
-		<h2>About the Creator</h2>
-		<p>
-			This real-time drawing board is developed by <strong
-				>Arin Gadre</strong
-			>
-		</p>
-		<div class="social-links">
-			<a
-				href="https://www.linkedin.com/in/arin-gadre/"
-				target="_blank"
-				class="social-link"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
+	<footer class="footer-container">
+		<div class="creator-section">
+			<h2>About the Creator</h2>
+			<p>
+				This real-time drawing board is developed by <strong
+					>Arin Gadre</strong
 				>
-					<path
-						d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"
-					/>
-					<rect x="2" y="9" width="4" height="12" />
-					<circle cx="4" cy="4" r="2" />
-				</svg>
-				LinkedIn
-			</a>
-			<a
-				href="https://github.com/aringadre76"
-				target="_blank"
-				class="social-link"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
+			</p>
+
+			<div class="links-container">
+				<a
+					href="https://www.linkedin.com/in/arin-gadre/"
+					target="_blank"
+					class="profile-link"
 				>
-					<path
-						d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
-					/>
-				</svg>
-				GitHub
-			</a>
-			<a href="mailto:aringadre@gmail.com" class="social-link">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path
+							d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"
+						/>
+						<rect x="2" y="9" width="4" height="12" />
+						<circle cx="4" cy="4" r="2" />
+					</svg>
+					LinkedIn
+				</a>
+				<a
+					href="https://github.com/aringadre76"
+					target="_blank"
+					class="profile-link"
 				>
-					<path
-						d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
-					/>
-					<polyline points="22,6 12,13 2,6" />
-				</svg>
-				Email
-			</a>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path
+							d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
+						/>
+					</svg>
+					GitHub
+				</a>
+				<a href="mailto:aringadre@gmail.com" class="profile-link">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path
+							d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+						/>
+						<polyline points="22,6 12,13 2,6" />
+					</svg>
+					Email
+				</a>
+			</div>
+
 			<div class="code-links">
 				<a
 					href="https://github.com/aringadre76/real-time-drawing-board-backend-deploy"
-					target="_blank">Backend Code</a
+					target="_blank"
+					class="code-link">Backend Code</a
 				>
 				<a
 					href="https://github.com/aringadre76/real-time-drawing-board-frontend"
-					target="_blank">Frontend Code</a
+					target="_blank"
+					class="code-link">Frontend Code</a
 				>
+			</div>
+		</div>
+
+		<div class="tech-stack">
+			<h2>Technology Stack</h2>
+
+			<div class="stack-grid">
+				<div class="stack-card">
+					<h3>Frontend</h3>
+					<div class="stack-details">
+						<div class="stack-item">
+							<span class="label">Framework:</span>
+							<span class="value">Svelte</span>
+						</div>
+						<div class="stack-item">
+							<span class="label">Deployment:</span>
+							<span class="value">Vercel</span>
+						</div>
+						<div class="stack-item">
+							<span class="label">Features:</span>
+							<span class="value"
+								>Real-time WebSocket communication, Canvas API</span
+							>
+						</div>
+					</div>
+				</div>
+
+				<div class="stack-card">
+					<h3>Backend</h3>
+					<div class="stack-details">
+						<div class="stack-item">
+							<span class="label">Framework:</span>
+							<span class="value">Django Channels</span>
+						</div>
+						<div class="stack-item">
+							<span class="label">Real-time Layer:</span>
+							<span class="value">Redis</span>
+						</div>
+						<div class="stack-item">
+							<span class="label">Deployment:</span>
+							<span class="value">Railway</span>
+						</div>
+						<div class="stack-item">
+							<span class="label">Features:</span>
+							<span class="value"
+								>WebSocket handling, Real-time message
+								broadcasting</span
+							>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	</footer>
@@ -451,5 +508,163 @@
 		border-radius: 8px;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 		overflow: hidden;
+	}
+
+	.tech-stack {
+		margin-top: 3rem;
+		padding: 2rem;
+		background-color: white;
+		border-radius: 8px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.tech-stack h3 {
+		text-align: center;
+		color: #2c3e50;
+		margin-bottom: 1.5rem;
+	}
+
+	.footer-container {
+		margin-top: 4rem;
+		padding: 2rem;
+		background-color: #f8f9fa;
+		border-radius: 12px;
+		box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+	}
+
+	.creator-section {
+		text-align: center;
+		margin-bottom: 3rem;
+	}
+
+	.creator-section h2 {
+		color: #2d3748;
+		font-size: 1.8rem;
+		margin-bottom: 1rem;
+	}
+
+	.creator-section p {
+		color: #4a5568;
+		margin-bottom: 1.5rem;
+	}
+
+	.links-container {
+		display: flex;
+		justify-content: center;
+		gap: 1.5rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.profile-link {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		background-color: #fff;
+		border: 1px solid #e2e8f0;
+		border-radius: 6px;
+		color: #4a5568;
+		text-decoration: none;
+		transition: all 0.2s ease;
+	}
+
+	.profile-link:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+		border-color: #4a90e2;
+		color: #4a90e2;
+	}
+
+	.code-links {
+		display: flex;
+		justify-content: center;
+		gap: 1rem;
+	}
+
+	.code-link {
+		padding: 0.5rem 1rem;
+		background-color: #4a90e2;
+		color: white;
+		text-decoration: none;
+		border-radius: 6px;
+		transition: all 0.2s ease;
+	}
+
+	.code-link:hover {
+		background-color: #357abd;
+		transform: translateY(-2px);
+	}
+
+	.tech-stack {
+		margin-top: 3rem;
+	}
+
+	.tech-stack h2 {
+		text-align: center;
+		color: #2d3748;
+		font-size: 1.8rem;
+		margin-bottom: 2rem;
+	}
+
+	.stack-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		gap: 2rem;
+		max-width: 1200px;
+		margin: 0 auto;
+	}
+
+	.stack-card {
+		background-color: white;
+		border-radius: 8px;
+		padding: 1.5rem;
+		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+	}
+
+	.stack-card h3 {
+		color: #4a90e2;
+		font-size: 1.4rem;
+		margin-bottom: 1.5rem;
+		padding-bottom: 0.5rem;
+		border-bottom: 2px solid #f0f0f0;
+	}
+
+	.stack-details {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.stack-item {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.stack-item .label {
+		color: #718096;
+		font-size: 0.9rem;
+		font-weight: 500;
+	}
+
+	.stack-item .value {
+		color: #2d3748;
+		font-size: 1rem;
+	}
+
+	@media (max-width: 768px) {
+		.links-container {
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.code-links {
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.stack-grid {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>
