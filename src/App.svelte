@@ -9,8 +9,7 @@
 	let canvas, ctx;
 	let isDrawing = false;
 	const clientId = Math.random().toString(36).substr(2, 9);
-	const distanceThreshold = 5;
-	let reconnectAttempts = 0;
+	let reconnectAttempts = 10;
 	const maxReconnectAttempts = 100;
 
 	function initializeWebSocket() {
