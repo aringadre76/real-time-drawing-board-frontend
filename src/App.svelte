@@ -9,15 +9,9 @@
 	let canvas, ctx;
 	let isDrawing = false;
 	const clientId = Math.random().toString(36).substr(2, 9);
-	const distanceThreshold = 10;
+	const distanceThreshold = 5;
 	let reconnectAttempts = 0;
-	const maxReconnectAttempts = 5;
-
-	// Add these new variables for smart line connection
-	const MAX_TIME_BETWEEN_POINTS = 100; // milliseconds
-	const MAX_DISTANCE_BETWEEN_POINTS = 50; // pixels
-	let lastRemoteDrawTime = 0;
-	let lastRemotePoint = null;
+	const maxReconnectAttempts = 100;
 
 	function initializeWebSocket() {
 		ws = new WebSocket(
@@ -58,34 +52,9 @@
 		}
 	}
 
-	// Helper function to calculate distance between points
-	function getDistance(x1, y1, x2, y2) {
-		return Math.hypot(x2 - x1, y2 - y1);
-	}
-
-	// Modified remote drawing handler with smart connection logic
+	// Simplified remote drawing handler
 	const handleRemoteDrawing = (prevX, prevY, x, y) => {
-		const currentTime = Date.now();
-
-		// If the points are too close, skip to avoid unnecessary tiny lines
-		const distance = getDistance(prevX, prevY, x, y);
-		if (distance < 2) return; // Skip if points are too close
-
-		// Draw the line
 		drawRemoteLine(prevX, prevY, x, y);
-
-		// Update last point for next drawing
-		lastRemotePoint = { x, y, time: currentTime };
-		lastRemoteDrawTime = currentTime;
-	};
-
-	// New function to draw a single point
-	const drawRemotePoint = (x, y) => {
-		ctx.beginPath();
-		ctx.arc(x, y, 1, 0, Math.PI * 2);
-		ctx.fillStyle = "blue";
-		ctx.fill();
-		ctx.closePath();
 	};
 
 	onMount(() => {
@@ -110,7 +79,6 @@
 		localX = event.clientX - rect.left;
 		localY = event.clientY - rect.top;
 	};
-
 	const draw = (event) => {
 		if (!isDrawing) return;
 
@@ -120,7 +88,11 @@
 		localX = event.clientX - rect.left;
 		localY = event.clientY - rect.top;
 
-		drawLocalLine(prevX, prevY, localX, localY);
+		if (action === "draw") {
+			drawLocalLine(prevX, prevY, localX, localY);
+		} else if (action === "erase") {
+			eraseLine(localX, localY);
+		}
 
 		const distance = Math.hypot(localX - prevX, localY - prevY);
 
@@ -148,7 +120,6 @@
 		ctx.strokeStyle = "black";
 		ctx.lineWidth = 2;
 		ctx.stroke();
-		ctx.closePath();
 	};
 
 	const drawRemoteLine = (prevX, prevY, x, y) => {
@@ -158,11 +129,15 @@
 		ctx.strokeStyle = "blue";
 		ctx.lineWidth = 2;
 		ctx.stroke();
-		ctx.closePath();
 	};
 
 	const eraseLine = (x, y) => {
-		ctx.clearRect(x - 5, y - 5, 10, 10);
+		ctx.save();
+		ctx.beginPath();
+		ctx.arc(x, y, 20, 0, Math.PI * 2);
+		ctx.clip();
+		ctx.clearRect(x - 20, y - 20, 40, 40);
+		ctx.restore();
 	};
 
 	const resizeCanvas = () => {
@@ -190,7 +165,6 @@
 		localY = touch.pageY - rect.top - scrollTop;
 		isDrawing = true;
 	};
-
 	const handleTouchMove = (event) => {
 		event.preventDefault();
 		if (!isDrawing) return;
@@ -207,7 +181,11 @@
 		localX = touch.pageX - rect.left - scrollLeft;
 		localY = touch.pageY - rect.top - scrollTop;
 
-		drawLocalLine(prevX, prevY, localX, localY);
+		if (action === "draw") {
+			drawLocalLine(prevX, prevY, localX, localY);
+		} else if (action === "erase") {
+			eraseLine(localX, localY);
+		}
 
 		const distance = Math.hypot(localX - prevX, localY - prevY);
 
