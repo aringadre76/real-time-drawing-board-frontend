@@ -66,34 +66,16 @@
 	// Modified remote drawing handler with smart connection logic
 	const handleRemoteDrawing = (prevX, prevY, x, y) => {
 		const currentTime = Date.now();
-		const currentPoint = { x, y, time: currentTime };
 
-		if (lastRemotePoint) {
-			const timeDiff = currentTime - lastRemotePoint.time;
-			const distance = getDistance(
-				lastRemotePoint.x,
-				lastRemotePoint.y,
-				x,
-				y,
-			);
+		// If the points are too close, skip to avoid unnecessary tiny lines
+		const distance = getDistance(prevX, prevY, x, y);
+		if (distance < 2) return; // Skip if points are too close
 
-			if (
-				timeDiff < MAX_TIME_BETWEEN_POINTS &&
-				distance < MAX_DISTANCE_BETWEEN_POINTS
-			) {
-				// Points are close enough in time and space - connect them
-				drawRemoteLine(lastRemotePoint.x, lastRemotePoint.y, x, y);
-			} else {
-				// Points are too far apart in time or space - start a new line
-				ctx.beginPath();
-				drawRemotePoint(x, y);
-			}
-		} else {
-			// This is the first point or starting a new line
-			drawRemotePoint(x, y);
-		}
+		// Draw the line
+		drawRemoteLine(prevX, prevY, x, y);
 
-		lastRemotePoint = currentPoint;
+		// Update last point for next drawing
+		lastRemotePoint = { x, y, time: currentTime };
 		lastRemoteDrawTime = currentTime;
 	};
 
@@ -269,11 +251,14 @@
 <footer>
 	<h2>About the Creator</h2>
 	<p>
-		This real-time drawing board is developed by <strong>Arin Gadre</strong>.
+		This real-time drawing board is developed by <strong>Arin Gadre</strong
+		>.
 	</p>
 	<ul>
 		<li>
-			<a href="https://www.linkedin.com/in/arin-gadre/" target="_blank">LinkedIn</a>
+			<a href="https://www.linkedin.com/in/arin-gadre/" target="_blank"
+				>LinkedIn</a
+			>
 		</li>
 		<li>
 			<a href="https://github.com/aringadre76" target="_blank">GitHub</a>
@@ -282,10 +267,16 @@
 			<a href="mailto:aringadre@gmail.com">Email: aringadre@gmail.com</a>
 		</li>
 		<li>
-			<a href="https://github.com/aringadre76/real-time-drawing-board-backend-deploy" target="_blank">Backend Code</a>
+			<a
+				href="https://github.com/aringadre76/real-time-drawing-board-backend-deploy"
+				target="_blank">Backend Code</a
+			>
 		</li>
 		<li>
-			<a href="https://github.com/aringadre76/real-time-drawing-board-frontend" target="_blank">Frontend Code</a>
+			<a
+				href="https://github.com/aringadre76/real-time-drawing-board-frontend"
+				target="_blank">Frontend Code</a
+			>
 		</li>
 	</ul>
 </footer>
