@@ -17,7 +17,7 @@
 
 	function initializeWebSocket() {
 		ws = new WebSocket(
-			"wss://web-production-efe2f.up.railway.app/ws/drawing/",
+			"wss://real-time-drawing-board-backend-deploy.onrender.com/ws/drawing/",
 		);
 
 		ws.onopen = () => console.log("WebSocket connected!");
@@ -423,7 +423,7 @@
 						</div>
 						<div class="stack-item">
 							<span class="label">Deployment:</span>
-							<span class="value">Railway</span>
+							<span class="value">Render</span>
 						</div>
 						<div class="stack-item">
 							<span class="label">Features:</span>
